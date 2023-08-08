@@ -1,0 +1,88 @@
+# 2d LJ liquid with thermostat
+
+# ---------------
+# model variables
+# ---------------
+
+variable        rho index 0.7
+variable        temp index 1.0
+variable        cutoff index 2.5
+variable        srate equal 2.5
+
+# ---------------
+# settings
+# ---------------
+
+units		lj
+dimension       2
+atom_style	atomic
+boundary        p p p
+neighbor	0.3 bin
+neigh_modify	every 20 delay 0 check no
+
+# ---------------
+# create simulation box and atoms
+# ---------------
+
+lattice		sq2 ${rho}
+region		box block 0 20 0 20 -0.25 0.25
+#region		box prism 0 20 0 20 -0.25 0.25 0 0 0
+create_box	1 box
+create_atoms	1 box
+
+mass		1 1.0
+
+# ---------------
+# LJ potential
+# ---------------
+
+pair_style	lj/cut ${cutoff}
+pair_coeff	1 1 1.0 1.0
+
+# ---------------
+# initial velocities
+# ---------------
+
+velocity	all create ${temp} 87287 loop geom
+
+# ---------------
+# fixes for time integration and thermostatting
+# ---------------
+
+fix             1 all nve
+fix             2 all langevin ${temp} ${temp} 1.0 77478 zero yes
+
+fix		3 all enforce2d
+
+# ---------------
+# material properties
+# ---------------
+compute myRDF all rdf 100 
+fix av all ave/time 100 1 100 c_myRDF[*] file rdf.txt mode vector
+# ---------------
+# output
+# ---------------
+
+thermo		1000
+
+#dump		1 all atom 500 dump.lj
+
+dump		2 all image 25000 image.*.jpg type type &
+		zoom 1.6 adiam 1.0
+dump_modify	2 pad 5
+
+# command for Mac and Linux
+dump            3 all movie 100 movie.mpg type type &
+                zoom 1.6 adiam 1.5
+
+# command for Windows
+#dump            3 all movie 100 movie.avi type type &
+#                zoom 1.6 adiam 1.5
+
+dump_modify	3 pad 5
+
+# ---------------
+# run
+# ---------------
+
+run             25000

@@ -1,0 +1,172 @@
+LAMMPS (2 Aug 2023)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+# 2d LJ liquid with thermostat
+
+# ---------------
+# model variables
+# ---------------
+
+variable        rho index 0.3
+variable        temp index 1.0
+variable        cutoff index 2.5
+variable        srate equal 2.5
+
+# ---------------
+# settings
+# ---------------
+
+units		lj
+dimension       2
+atom_style	atomic
+boundary        p p p
+neighbor	0.3 bin
+neigh_modify	every 20 delay 0 check no
+
+# ---------------
+# create simulation box and atoms
+# ---------------
+
+lattice		sq2 ${rho}
+lattice		sq2 0.3
+Lattice spacing in x,y,z = 2.5819889 2.5819889 2.5819889
+region		box block 0 20 0 20 -0.25 0.25
+#region		box prism 0 20 0 20 -0.25 0.25 0 0 0
+create_box	1 box
+Created orthogonal box = (0 0 -0.64549722) to (51.639778 51.639778 0.64549722)
+  1 by 1 by 1 MPI processor grid
+create_atoms	1 box
+Created 800 atoms
+  using lattice units in orthogonal box = (0 0 -0.64549722) to (51.639778 51.639778 0.64549722)
+  create_atoms CPU = 0.001 seconds
+
+mass		1 1.0
+
+# ---------------
+# LJ potential
+# ---------------
+
+pair_style	lj/cut ${cutoff}
+pair_style	lj/cut 2.5
+pair_coeff	1 1 1.0 1.0
+
+# ---------------
+# initial velocities
+# ---------------
+
+velocity	all create ${temp} 87287 loop geom
+velocity	all create 1.0 87287 loop geom
+
+# ---------------
+# fixes for time integration and thermostatting
+# ---------------
+
+fix             1 all nve
+fix             2 all langevin ${temp} ${temp} 1.0 77478 zero yes
+fix             2 all langevin 1.0 ${temp} 1.0 77478 zero yes
+fix             2 all langevin 1.0 1.0 1.0 77478 zero yes
+
+fix		3 all enforce2d
+
+# ---------------
+# material properties
+# ---------------
+compute myRDF all rdf 100
+fix av all ave/time 100 1 100 c_myRDF[*] file rdf.txt mode vector
+# ---------------
+# output
+# ---------------
+
+thermo		1000
+
+#dump		1 all atom 500 dump.lj
+
+dump		2 all image 25000 image.*.jpg type type 		zoom 1.6 adiam 1.0
+dump_modify	2 pad 5
+
+# command for Mac and Linux
+dump            3 all movie 100 movie.mpg type type                 zoom 1.6 adiam 1.5
+
+# command for Windows
+#dump            3 all movie 100 movie.avi type type #                zoom 1.6 adiam 1.5
+
+dump_modify	3 pad 5
+
+# ---------------
+# run
+# ---------------
+
+run             25000
+Generated 0 of 0 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 20 steps, delay = 0 steps, check = no
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 2.8
+  ghost atom cutoff = 2.8
+  binsize = 1.4, bins = 37 37 1
+  2 neighbor lists, perpetual/occasional/extra = 1 1 0
+  (1) pair lj/cut, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/2d
+      bin: standard
+  (2) compute rdf, occasional, copy from (1)
+      attributes: half, newton on
+      pair build: copy
+      stencil: none
+      bin: none
+Per MPI rank memory allocation (min/avg/max) = 2.942 | 2.942 | 2.942 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   1             -0.210168       0              0.788582       0.1157226    
+      1000   0.99000196    -0.7984263      0              0.19033816     0.30293196   
+      2000   1.0680545     -0.81852706     0              0.2481924      0.31297085   
+      3000   1.041857      -0.85657604     0              0.18397863     0.28088821   
+      4000   1.017768      -0.81618216     0              0.20031366     0.32607065   
+      5000   0.95843847    -0.85899653     0              0.09824389     0.23112579   
+      6000   1.0425959     -0.82040768     0              0.22088495     0.2651442    
+      7000   1.0532885     -0.80990219     0              0.24206966     0.26790396   
+      8000   1.0278215     -0.83302447     0              0.19351221     0.20761802   
+      9000   1.019524      -0.82181526     0              0.19643437     0.27824094   
+     10000   1.0456864     -0.86292704     0              0.18145227     0.27865449   
+     11000   0.94920264    -0.8355345      0              0.11248164     0.28205646   
+     12000   0.98794673    -0.83840723     0              0.14830457     0.31470649   
+     13000   1.0067937     -0.84318089     0              0.1623543      0.27843986   
+     14000   1.0213467     -0.85722797     0              0.16284205     0.27917312   
+     15000   0.96978783    -0.82863161     0              0.13994399     0.30612107   
+     16000   1.0217874     -0.81778716     0              0.20272297     0.31171441   
+     17000   1.0120798     -0.84257892     0              0.16823579     0.34265745   
+     18000   0.95871156    -0.82379331     0              0.13371986     0.28619661   
+     19000   0.94781072    -0.81079419     0              0.13583177     0.29560807   
+     20000   0.95989094    -0.82760467     0              0.13108641     0.34114615   
+     21000   1.013415      -0.88642246     0              0.12572578     0.334678     
+     22000   0.96731984    -0.82703778     0              0.13907291     0.24900978   
+     23000   1.1156031     -0.83318101     0              0.28102756     0.30648338   
+     24000   0.99175641    -0.8348473      0              0.15566941     0.26727069   
+     25000   1.046358      -0.82436186     0              0.22068821     0.32679936   
+Loop time of 5.46267 on 1 procs for 25000 steps with 800 atoms
+
+Performance: 1977054.915 tau/day, 4576.516 timesteps/s, 3.661 Matom-step/s
+95.4% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 1.1125     | 1.1125     | 1.1125     |   0.0 | 20.37
+Neigh   | 0.18281    | 0.18281    | 0.18281    |   0.0 |  3.35
+Comm    | 0.04234    | 0.04234    | 0.04234    |   0.0 |  0.78
+Output  | 2.8674     | 2.8674     | 2.8674     |   0.0 | 52.49
+Modify  | 1.2296     | 1.2296     | 1.2296     |   0.0 | 22.51
+Other   |            | 0.02801    |            |       |  0.51
+
+Nlocal:            800 ave         800 max         800 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:            175 ave         175 max         175 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:           2930 ave        2930 max        2930 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 2930
+Ave neighs/atom = 3.6625
+Neighbor list builds = 1250
+Dangerous builds not checked
+Total wall time: 0:00:05

@@ -1,0 +1,84 @@
+Answers for Exercise properties
+
+See README.txt for tasks
+
+-------------------
+-------------------
+
+(1) Perform a run, plot thermo output, visualize the simulation
+
+All commands are shown in README.txt.
+
+-------------------
+
+(2) Compute the radial distribution function (RDF)
+
+Add commands like these to the "material properties" section of the
+input script to compute the RDF, time-average, and output the final average RDF
+to the data.rdf file:
+
+compute         myRDF all rdf 50
+fix             10 all ave/time 10 2500 25000 c_myRDF[*] &
+                file data.rdf mode vector
+
+Plot the 2nd column on the x-axis and the 3rd column on the y-axis
+to get a plot that looks like rdf.png.
+
+The "10 2500 25000" values mean compute the RDF every 10 steps,
+average it 2500 times, and output the final values every 25000 steps.
+For the in.lj script the run is 25000 steps, so one table of RDF
+values will be written to data.rdf.  You can try other values
+of those 3 numbers as well.
+
+-------------------
+
+(3) Compute the mean-squared displacement (MSD) and diffusion
+coefficient
+
+Add commands like these to the "material properties" section of the
+input script to compute Dcoeff by a 2-point fit.  The use of 0.001 is
+to avoid a divide-by-zero at the first timestep.  The last command
+will include the MSD and Dcoeff value in the thermodynamic output:
+
+compute         msd all msd
+variable        dcoeff equal c_msd[4]/(step*dt+0.001)/4
+thermo_style    custom step temp epair press c_msd[4] v_dcoeff
+
+EXTRA: Adding these commands will also compute Dfit by fitting to a
+vector for the entire time-history of MSD values.  The last command
+will include Dfit in the thermodynamic output:
+
+fix             11 all vector 1000 c_msd[4]
+variable        dfit equal slope(f_11)/(1000*dt)/4
+thermo_style    custom step temp epair press c_msd[4] v_dcoeff v_dfit
+thermo_style    custom step temp epair press c_msd[4] v_dcoeff v_dfit
+
+-------------------
+
+(4) Compute and colorize defects for a solid state system
+
+Change the rho value to 1.0.
+
+These commands will colorize defects for both individual cnum.*.jpg
+snapshots and a cnum.mpg movie:
+
+compute         cnum all coord/atom cutoff 1.5
+
+dump		4 all image 500 cnum.*.jpg c_cnum type &
+		zoom 1.6 adiam 1.0
+dump_modify	4 pad 5
+
+dump		5 all movie 500 cnum.mpg c_cnum type &
+		zoom 1.6 adiam 1.0
+dump_modify	5 pad 5
+
+The value of 1.5 in the compute coord/atom commmand is a good cutoff
+length to capture first neighbors in a 2d LJ solid for a hexagonal
+lattice.
+
+-------------------
+
+(5) Compute the viscosity (eta) for a liquid system
+
+Because of its relative complexity, all the instructions for this task
+are in README.txt.
