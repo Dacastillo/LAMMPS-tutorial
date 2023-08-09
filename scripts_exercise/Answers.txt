@@ -1,0 +1,82 @@
+Answers for Exercise scripts
+
+See README.txt for tasks
+
+-------------------
+-------------------
+
+(1) Perform a run, plot thermo output, visualize the simulation
+
+All commands are shown in README.txt.
+
+-------------------
+
+(2) Add 3 variable commands to simplify setting key flow parameters
+
+The new variable commands at the top of the file should be:
+
+variable    push index 1.0
+variable    damp index 0.5
+variable    compress index -0.5
+
+The altered fix commands should be:
+
+fix		4 upper aveforce 0.0 ${compress} 0.0
+fix		5 flow addforce ${push} 0.0 0.0
+fix             6 flow viscous ${damp}
+
+These are the physical effects of the 3 variables on the flow:
+
+"push" variable:
+  The larger the push force the faster the flow.
+"damp" variable: 
+  Counteracts the push variable.  More damping slows and solidifies the flow.
+  Less damping allows the flow to be faster and more gas-like.
+"compress" variable
+  The more negative the value, the narrower the channel becomes.
+
+-------------------
+
+(3) Change the size of the obstacle in the flow
+
+The two region sphere commands will have an altered last numeric
+argument which is radius of the sphere.  For example:
+
+region		void sphere 10 4 0 1.01
+region		voidout sphere 10 4 0 1 side out
+
+-------------------
+
+(4) Add a second obstacle to the flow
+
+These commmands add a second spherical obstacle of the same size in a
+different position:
+
+region		void2 sphere 20 7 0 3.01
+region		void2out sphere 20 7 0 3 side out
+delete_atoms	region void2
+fix             obstacle2 flow wall/region void2out harmonic 100 0 1.12246
+
+These commands add a second spherical obstacle which overlaps
+the first one.  It should run fine as well:
+
+region		void2 sphere 14 7 0 4.01
+region		void2out sphere 14 7 0 4 side out
+delete_atoms	region void2
+fix             obstacle2 flow wall/region void2out harmonic 100 0 1.12246
+
+-------------------
+
+(5) Change the obstacle to have a different shape
+
+These new region commands replace the region sphere commands to create
+a block-shaped obstacle:
+
+region		void block 9.99 18.01 2.99 7.01 INF INF
+region		voidout block 10 18 3 7 INF INF side out
+
+These new region commands replace the region sphere comands to create
+a prism-shaped obstacle.  In 2d, a prism is a tilted rectangle:
+
+region		void prism 9.99 18.01 2.99 7.01 INF INF 4 0 0
+region		voidout prism 10 18 3 7 INF INF 4 0 0 side out

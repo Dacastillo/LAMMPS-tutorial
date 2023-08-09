@@ -1,0 +1,57 @@
+Answers for Exercise basic
+
+See REAMDE.txt for tasks
+
+-------------------
+-------------------
+
+(1) Perform a run, plot thermo output, visualize the simulation
+
+All commands are shown in README.txt.
+
+-------------------
+
+(2) Change size of the asperities
+
+Here is an example that makes one of the 2 half-spheres larger,
+by changing the last argument from 8 to 10:
+
+region		lo-asperity sphere 32 7 0 10
+region		hi-asperity sphere 18 15 0 8
+
+-------------------
+
+(3) Run for two cycles instead of one
+
+The run command for this is
+
+run		40000
+
+-------------------
+
+(4) Change the shape of the asperities
+
+All commands are already included in the input script.
+
+Comment out these 4 commands:
+
+#region		lo-asperity sphere 32 7 0 8
+#region		hi-asperity sphere 18 15 0 8
+#region		lo-bump intersect 2 lo-asperity above-lo
+#region		hi-bump intersect 2 hi-asperity below-hi
+
+Un-comment these 2 commands:
+
+region		lo-bump block 28 36 7.8 12 INF INF
+region		hi-bump block 14 22 10 14.8 INF INF
+
+-------------------
+
+(5) Run on two-processors and compare timing to one-processor run
+
+See these lines in the log.lammps file:
+
+1 proc: Loop time of 5.48112 on 1 procs for 20000 steps with 1724 atoms
+2 procs: Loop time of 3.58445 on 2 procs for 20000 steps with 1724 atoms
+
+Examining the timing breakout will tell you what sped up and what did not.

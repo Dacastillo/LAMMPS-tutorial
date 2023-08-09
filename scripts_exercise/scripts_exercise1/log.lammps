@@ -1,0 +1,198 @@
+LAMMPS (2 Aug 2023)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+# 2d LJ flow in a channel around an obstacle
+
+# ---------------
+# flow variables
+# ---------------
+variable push index 1.0
+variable damp index 1.0
+variable compress index 1.0
+# ---------------
+# settings
+# ---------------
+
+units           lj
+dimension	2
+boundary	p s p
+
+atom_style	atomic
+neighbor	0.3 bin
+neigh_modify	delay 5
+
+# ---------------
+# create simulation box and atoms
+# ---------------
+
+lattice		hex 0.7
+Lattice spacing in x,y,z = 1.2843567 2.2245711 1.2843567
+region		box block 0 40 0 10 -0.25 0.25
+create_box	3 box
+Created orthogonal box = (0 0 -0.32108918) to (51.374269 22.245711 0.32108918)
+  1 by 1 by 1 MPI processor grid
+create_atoms	1 box
+Created 840 atoms
+  using lattice units in orthogonal box = (0 -0.0022245711 -0.32108918) to (51.374269 22.247936 0.32108918)
+  create_atoms CPU = 0.001 seconds
+
+mass		* 1.0
+
+# ---------------
+# LJ potential
+# ---------------
+
+pair_style	lj/cut 1.12246
+pair_coeff	* * 1.0 1.0 1.12246
+
+# ---------------
+# define groups
+# ---------------
+
+region	        1 block INF INF INF 1.25 INF INF
+group		lower region 1
+120 atoms in group lower
+region		2 block INF INF 8.75 INF INF INF
+group		upper region 2
+120 atoms in group upper
+group		boundary union lower upper
+240 atoms in group boundary
+group		flow subtract all boundary
+600 atoms in group flow
+
+set		group lower type 2
+Setting atom values ...
+  120 settings made for type
+set		group upper type 3
+Setting atom values ...
+  120 settings made for type
+
+# ---------------
+# obstacle
+# ---------------
+
+region		void sphere 10 4 0 3.01
+region		voidout sphere 10 4 0 3 side out
+
+delete_atoms	region void
+Deleted 37 atoms, new total = 803
+fix             obstacle flow wall/region voidout harmonic 100 0 1.12246
+
+# ---------------
+# initial velocities
+# ---------------
+
+velocity	boundary set 0.0 0.0 0.0
+velocity	flow create 1.0 482748
+
+# ---------------
+# fixes for Poiseuille flow and viscous damping
+# ---------------
+
+fix		1 all nve
+fix		2 lower setforce 0.0 0.0 0.0
+fix		3 upper setforce 0.0 NULL 0.0
+
+fix		4 upper aveforce 0.0 -0.5 0.0
+fix		5 flow addforce 1.0 0.0 0.0
+fix             6 flow viscous 0.5
+
+fix		7 all enforce2d
+
+# ---------------
+# output
+# ---------------
+
+compute         tflow flow temp
+
+thermo		1000
+thermo_modify	temp tflow
+WARNING: Temperature for thermo pressure is not for group all (src/thermo.cpp:527)
+
+dump		1 all custom 500 dump.obstacle id type x y z vx
+
+dump		2 all image 500 image.*.jpg type type 		zoom 1.6 adiam 1.5
+dump_modify	2 pad 5
+
+# command for Mac and Linux
+dump            3 all movie 500 movie.mpg type type                 zoom 1.6 adiam 1.5
+
+# command for Windows
+#dump            3 all movie 500 movie.avi type type #                zoom 1.6 adiam 1.5
+
+dump_modify	3 pad 5
+
+# ---------------
+# run
+# ---------------
+
+timestep	0.003
+run		25000
+Generated 0 of 3 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 5 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 1.42246
+  ghost atom cutoff = 1.42246
+  binsize = 0.71123, bins = 73 32 1
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/2d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 3.056 | 3.056 | 3.056 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press          Volume    
+         0   1              0              0              0.69987547     0.49165167     1143.0857    
+      1000   1.1478644     -0.35554921     0              0.44781294     1.1164345      1188.2954    
+      2000   1.4952021     -0.48791923     0              0.55853604     1.725017       1178.7797    
+      3000   1.499513      -0.58592863     0              0.46354374     2.0197804      1196.9956    
+      4000   1.4933286     -0.63044729     0              0.41469674     1.9234751      1237.3853    
+      5000   1.4857973     -0.63525437     0              0.40461867     1.8924252      1275.7574    
+      6000   1.4900965     -0.59172105     0              0.45116095     1.9071641      1296.9032    
+      7000   1.5239846     -0.56556695     0              0.50103246     1.6068184      1315.4211    
+      8000   1.5269224     -0.54462653     0              0.52402898     1.7238989      1322.094     
+      9000   1.562336      -0.53713673     0              0.55630393     1.6082752      1325.2881    
+     10000   1.5881374     -0.51484048     0              0.59665789     1.4704944      1327.0386    
+     11000   1.5814442     -0.51970435     0              0.58710966     1.6462086      1323.2378    
+     12000   1.573653      -0.57641083     0              0.52495033     1.6219064      1328.8947    
+     13000   1.5829922     -0.52830471     0              0.57959266     1.5006407      1331.7689    
+     14000   1.5833344     -0.54079567     0              0.56734121     1.5270287      1332.9875    
+     15000   1.600836      -0.54136609     0              0.57901974     1.3979318      1336.6604    
+     16000   1.6188904     -0.56195874     0              0.5710629      1.4343128      1338.63      
+     17000   1.6012308     -0.56555153     0              0.55511066     1.5441355      1337.4044    
+     18000   1.6244661     -0.52443189     0              0.61249211     1.3980148      1338.0769    
+     19000   1.6437223     -0.53023552     0              0.62016536     1.4781821      1329.3294    
+     20000   1.6522717     -0.55923692     0              0.59714748     1.4896189      1321.9218    
+     21000   1.6245273     -0.58424498     0              0.5527218      1.5012309      1321.5295    
+     22000   1.6364626     -0.58007596     0              0.56524407     1.4836285      1322.6961    
+     23000   1.6303219     -0.56331759     0              0.57770471     1.5604998      1322.4194    
+     24000   1.6214679     -0.53905733     0              0.59576824     1.4569677      1325.7982    
+     25000   1.6165134     -0.53188635     0              0.59947172     1.4680857      1330.5271    
+Loop time of 2.50736 on 1 procs for 25000 steps with 803 atoms
+
+Performance: 2584389.023 tau/day, 9970.637 timesteps/s, 8.006 Matom-step/s
+95.9% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.44122    | 0.44122    | 0.44122    |   0.0 | 17.60
+Neigh   | 0.13606    | 0.13606    | 0.13606    |   0.0 |  5.43
+Comm    | 0.023055   | 0.023055   | 0.023055   |   0.0 |  0.92
+Output  | 1.0169     | 1.0169     | 1.0169     |   0.0 | 40.56
+Modify  | 0.81601    | 0.81601    | 0.81601    |   0.0 | 32.54
+Other   |            | 0.0741     |            |       |  2.96
+
+Nlocal:            803 ave         803 max         803 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:             64 ave          64 max          64 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:           1914 ave        1914 max        1914 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 1914
+Ave neighs/atom = 2.3835616
+Neighbor list builds = 1605
+Dangerous builds = 0
+Total wall time: 0:00:02
